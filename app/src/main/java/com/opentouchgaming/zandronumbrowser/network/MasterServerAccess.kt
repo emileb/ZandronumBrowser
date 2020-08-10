@@ -24,8 +24,11 @@ class MasterServerAccess {
     val MSC_ENDSERVERLISTPART = 7
     val MSC_SERVERBLOCK = 8
 
-    suspend fun fetchServers(): Result<ArrayList<Server>, String> {
+    suspend fun fetchServers(): Result<List<Server>, String> {
+
         val servers = ArrayList<Server>()
+
+        var errorString = ""
 
         withContext(Dispatchers.IO) {
 
@@ -33,32 +36,45 @@ class MasterServerAccess {
 
             // Try to send command
             network.send(getServersCmd())
-                    .onFailure { error: String ->
-                        println("Error = $error");
-                        return@withContext Err(error)
-                    }
-                    .onSuccess { println("Sent") }
+                .onFailure { error: String ->
+                    errorString = error
+                    return@withContext
+                }
+                .onSuccess { println("Sent") }
 
             // Receive data
             while (true) {
                 val ret = network.receive()
-                        .onFailure { error: String ->
-                            println("Error = $error");
-                            return@withContext Err(error)
-                        }
-                        .onSuccess { array: ByteArray -> println("Received ${array.size} bytes") }
+                    .onFailure { error: String ->
+                        errorString = error
+                        return@withContext
+                    }
+                    .onSuccess { array: ByteArray -> println("Received ${array.size} bytes") }
 
                 val data = ret.component1()
-                if (data != null) {
-                    decodeServers(data)
 
+                // Try to decode the data
+                if (data != null) {
+                    decodeServers(data, servers)
+                        .onFailure { error: String ->
+                            errorString = error
+                            return@withContext
+                        }
+                        .onSuccess { endOfList: Boolean ->
+                            if (endOfList)
+                                return@withContext
+                        }
                 }
             }
-            // servers.add(Server())
+
+            println("fetchServers FINISHED")
         }
 
-        println("fetchServers FINISHED")
-        return Ok(servers)
+        return if (errorString.isEmpty()) {
+            Ok(servers)
+        } else {
+            Err(errorString)
+        }
     }
 
     private fun encode(data: ByteArray): ByteArray {
@@ -85,7 +101,10 @@ class MasterServerAccess {
         return encode(bytes.array())
     }
 
-    private fun decodeServers(data: ByteArray): Result<List<Server>, String> {
+    private fun decodeServers(
+        data: ByteArray,
+        servers: MutableList<Server>
+    ): Result<Boolean, String> {
         val decoded = decode(data)
         println("data = ${b(decoded)}")
         val buffer = ByteBuffer.wrap(decoded)
@@ -106,8 +125,7 @@ class MasterServerAccess {
         val packetNum = buffer.get().toUByte()
         println("packetNum = $packetNum")
 
-        val servers: MutableList<Server> = mutableListOf()
-
+        var endOfList = false
         loop@ while (true) {
 
             val command = buffer.get().toInt()
@@ -129,22 +147,23 @@ class MasterServerAccess {
                         val ip2 = buffer.get().toUByte()
                         val ip3 = buffer.get().toUByte()
 
-                        while(numPorts > 0)
-                        {
-                            val port =  buffer.getShort().toUShort()
+                        while (numPorts > 0) {
+                            val port = buffer.getShort().toUShort()
                             val server = Server(packetNum, ubyteArrayOf(ip0, ip1, ip2, ip3), port)
                             //println("server = ${server.toString()}")
                             servers.add(server)
                             numPorts--
                         }
-
                     }
                 }
-                MSC_ENDSERVERLIST-> break@loop;
+                MSC_ENDSERVERLIST -> {
+                    endOfList = true;
+                    break@loop;
+                }
                 MSC_ENDSERVERLISTPART -> break@loop;
             }
         }
 
-        return Ok(servers)
+        return Ok(endOfList)
     }
 }

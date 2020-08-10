@@ -5,7 +5,9 @@ import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
+import com.opentouchgaming.deltatouch.Browser.MasterServer.Server
 
 import com.opentouchgaming.zandronumbrowser.R
 import kotlinx.android.synthetic.main.main_fragment.*
@@ -19,8 +21,10 @@ class MasterServerFragment : Fragment() {
 
     private lateinit var viewModel: MainViewModel
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?,
-                              savedInstanceState: Bundle?): View {
+    override fun onCreateView(
+        inflater: LayoutInflater, container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View {
         return inflater.inflate(R.layout.main_fragment, container, false)
     }
 
@@ -35,9 +39,7 @@ class MasterServerFragment : Fragment() {
 */
 
         button.setOnClickListener {
-
             viewModel.refreshButtonPressed()
-
         }
 
         toolbar_home.inflateMenu(R.menu.menu_home)
@@ -62,6 +64,13 @@ class MasterServerFragment : Fragment() {
         super.onActivityCreated(savedInstanceState)
         viewModel = ViewModelProvider(this).get(MainViewModel::class.java)
         // TODO: Use the ViewModel
+        viewModel.serverListMutableData.observe(
+            viewLifecycleOwner,
+            Observer { t: List<Server>? ->
+                if (t != null) {
+                    println("OBSERVED, len = ${t.size}")
+                }
+            })
 
     }
 
