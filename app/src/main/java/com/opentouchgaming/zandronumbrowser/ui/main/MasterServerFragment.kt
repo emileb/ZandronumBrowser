@@ -21,6 +21,8 @@ class MasterServerFragment : Fragment() {
 
     private lateinit var viewModel: MainViewModel
 
+    private val adapter: ServerViewAdapter = ServerViewAdapter(ArrayList<Server>(0))
+
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -37,6 +39,7 @@ class MasterServerFragment : Fragment() {
             // do something when click navigation
         }
 */
+        recyclerView.adapter = adapter
 
         button.setOnClickListener {
             viewModel.refreshButtonPressed()
@@ -69,6 +72,8 @@ class MasterServerFragment : Fragment() {
             Observer { t: List<Server>? ->
                 if (t != null) {
                     println("OBSERVED, len = ${t.size}")
+                    adapter.setNewData(t)
+                    adapter.notifyDataSetChanged()
                 }
             })
 
