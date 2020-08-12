@@ -12,6 +12,11 @@ object Repository {
         return masterServerAccess.fetchServers()
     }
 
+    suspend fun getServerInfo(server : Server):  Result<Boolean, String>
+    {
+        return masterServerAccess.fetchServerInfo(server)
+    }
+
     operator fun invoke(): Repository {
         return this
     }

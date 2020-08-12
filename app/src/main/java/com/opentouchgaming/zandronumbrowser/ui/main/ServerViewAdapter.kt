@@ -13,20 +13,11 @@ import com.opentouchgaming.deltatouch.Browser.MasterServer.Server
 import com.opentouchgaming.zandronumbrowser.R
 
 class ServerViewAdapter(
-    items: List<Server>
+    val clickListener: ServerClickListener
 ) :
     RecyclerView.Adapter<ServerViewAdapter.ViewHolder>() {
 
-    var values: List<Server> = items
-
-    private val onClickListener: View.OnClickListener
-
-    init {
-        onClickListener = View.OnClickListener { v ->
-            val item = v.tag as Server
-
-        }
-    }
+    var values: List<Server> = ArrayList()
 
     fun setNewData(items: List<Server>) {
         values = items
@@ -41,19 +32,23 @@ class ServerViewAdapter(
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val item = values.get(position)
-        //holder.idView.text = item.id
-        holder.contentView.text = item.getIpStr()
+        holder.itemView.tag = item
 
-        with(holder.itemView) {
-            tag = item
-            setOnClickListener(onClickListener)
+        holder.serverName.text = item.serverInfo?.name
+        holder.address.text = item.serverInfo?.url
+        holder.iwad.text = item.serverInfo?.iwad
+
+        holder.itemView.setOnClickListener {
+            clickListener.onServerClickListener(item)
         }
     }
 
     override fun getItemCount() = values.size
 
     inner class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
-        val idView: TextView = view.findViewById(R.id.id_text)
-        val contentView: TextView = view.findViewById(R.id.content)
+        val address: TextView = view.findViewById(R.id.address_text)
+        val serverName: TextView = view.findViewById(R.id.server_text)
+        val iwad: TextView = view.findViewById(R.id.iwad_text)
+
     }
 }

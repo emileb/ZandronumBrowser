@@ -12,8 +12,11 @@ import com.opentouchgaming.deltatouch.Browser.MasterServer.Server
 import com.opentouchgaming.zandronumbrowser.R
 import kotlinx.android.synthetic.main.main_fragment.*
 
+interface ServerClickListener {
+    fun onServerClickListener(server: Server)
+}
 
-class MasterServerFragment : Fragment() {
+class MasterServerFragment : Fragment(), ServerClickListener {
 
     companion object {
         fun newInstance() = MasterServerFragment()
@@ -21,7 +24,7 @@ class MasterServerFragment : Fragment() {
 
     private lateinit var viewModel: MainViewModel
 
-    private val adapter: ServerViewAdapter = ServerViewAdapter(ArrayList<Server>(0))
+    private val adapter: ServerViewAdapter = ServerViewAdapter(this)
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -74,9 +77,22 @@ class MasterServerFragment : Fragment() {
                     println("OBSERVED, len = ${t.size}")
                     adapter.setNewData(t)
                     adapter.notifyDataSetChanged()
+
+                    viewModel.updateServerInfo(t, callback = { n ->
+                        println("Updated $n")
+
+                        // TODO, find which one has changed and don't invalidate the whole list
+                        adapter.notifyDataSetChanged()
+                    })
                 }
             })
 
+    }
+
+    override fun onServerClickListener(server: Server) {
+        //TODO("Not yet implemented")
+        println("Clicked: ${server.getIpStr()}")
+        viewModel.serverItemPressed(server)
     }
 
 }

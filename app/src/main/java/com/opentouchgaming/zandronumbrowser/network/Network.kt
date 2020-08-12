@@ -11,13 +11,13 @@ import com.github.michaelbull.result.Result
 
 class Network(val address: String, val port: Int) {
 
-    val TIMEOUT = 10000
+    val TIMEOUT = 5000
 
     var socket: DatagramSocket? = null
     var sendPacket: DatagramPacket? = null
 
     fun send(data: ByteArray): Result<Boolean, String> {
-        println("send, len = ${data.size}")
+        println("send to: $address:$port, len = ${data.size}")
         try {
             socket = DatagramSocket()
             socket?.soTimeout = TIMEOUT
